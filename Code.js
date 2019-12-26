@@ -43,7 +43,7 @@ function doPost(e) {
         });
 
         bus.on(/\/register/, function () {
-            user.name = update.message.text.substring(10);
+            user.name = update.message.text.substring(10).trim();
             setUser();
             this.replyToSender("Hello " + user.name);
         });
