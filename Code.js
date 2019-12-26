@@ -36,10 +36,8 @@ function doPost(e) {
         });
 
         bus.on(/\/start/, function () {
-            this.replyToSender("Welcome to NUS Canoe/Kayak Sprint \n \n" +
-                "This bot support two commands: \n" +
-                "/program - the program for today(shows tomorrow's program after 1500) \n" +
-                "/lineup - the lineup for today(shows tomorrow's program after 2200)");
+            this.replyToSender("Hello fellow canoeist, this smart boi will help you get the /program and /lineup." +
+                "Begin by registering your name using /register <nickname on the sheets> and use /updates to turn on/off daily updates");
         });
 
         bus.on(/\/register/, function () {
