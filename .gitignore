@@ -1,3 +1,7 @@
 # Tokens file
 
 /Tokens.js
+
+# JSON Files
+
+*.json
