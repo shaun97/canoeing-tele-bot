@@ -1,11 +1,11 @@
-var token = "831341230:AAE0u1SfWJLPG8NNjk7REg99PXIdP6FPP34";
-var ssId = "1y00gPwrEoUR6uSTFZOi-gFDI_OOc8SZn1UHQ0E4oiT8";
+var SHEET = null;
+var SHEETARR = null;
 
 user = {
     "id": "",
     "name": "Stranger",
     "dailyUpdate": false,
-    "row": "",
+    "row": null
 }
 
 //Main Function that runs
@@ -21,37 +21,49 @@ function doPost(e) {
         var bot = new Bot(token, update);
 
         user.id = update.message.chat.id.toString();
+        getSheet();
         getUser();
         // Building commands
         var bus = new CommandBus();
 
+        bus.on(/\/updates/, function () {
+            var message = toggleDailyUpdates();
+            this.replyToSender("Hello " + user.name + ", " + message);
+        });
+
         bus.on(/\/program/, function () {
             var message = getTrngProgram();
-            this.replyToSender("Hello " + user.name + ", \n" + message);
+            this.replyToSender("Hello " + user.name + ", " + message);
         });
 
         bus.on(/\/lineup/, function () {
             var message = getLineUp();
-            this.replyToSender("Hello " + user.name + ", \n" + message);
+            this.replyToSender("Hello " + user.name + ", " + message);
         });
 
         bus.on(/\/start/, function () {
-            this.replyToSender("Hello fellow canoeist, this smart boi will help you get the /program and /lineup." +
-                "Begin by registering your name using /register <nickname on the sheets> and use /updates to turn on/off daily updates");
+            this.replyToSender("Hello fellow canoeist, this smart boi will help you get updates on the /program and /lineup. " +
+                "Begin by registering your name using /register [nickname on the sheets] and use /updates to toggle daily updates!");
         });
 
         bus.on(/\/register/, function () {
             user.name = update.message.text.substring(10).trim();
-            setUser();
-            this.replyToSender("Hello " + user.name);
+            if (user.name == "") {  //Regex this part for input validation?
+                this.replyToSender("Please enter something for your name!");
+            } else if (setUser()) {
+                this.replyToSender("Hello " + user.name + ", you have been sucessfully registered.");
+            } else {
+                this.replyToSender("Hmm, I couldn't find your name.... are you sure you are one of us?");
+            }
         });
 
         bus.on(/\/help/, function () {
-            this.replyToSender(update.message);
-            this.replyToSender("Welcome to NUS Canoe/Kayak Sprint \n \n" +
-                "This bot support two commands: \n" +
-                "/program - the program for today(shows tomorrow's program after 1500) \n" +
-                "/lineup - the lineup for today(shows tomorrow's program after 2200)");
+            this.replyToSender("Here is a summary of what this smart boi can do: \n \n" +
+                "/program - the program for today (shows tomorrow's program after 1500) \n" +
+                "/lineup - the lineup for today (shows tomorrow's lineup after dana assigns usually around 2200) \n" +
+                "/updates - to toggle between enabling/disabling daily 0600 updates \n" +
+                "/register [nickname on sheet] - to register your name with me!"
+            );
         });
     }
     // Register the command bus
@@ -71,7 +83,7 @@ function sendToAll() {
     for (var i in IDs) {
         user.name = i;
         var message = "Hey " + user.name + ", rise and shine and get ready to obtain this grain!! \n\n" + trngPrg + "\n\n" + lineup;
-       sendMessageById(IDs[i], message);
+        sendMessageById(IDs[i], message);
     }
 }
 
@@ -100,7 +112,6 @@ function getLineUp() {
         }
         var dateRow = 0;
         var lineupRow = 2;
-        var lineup = "";
         var dateInString = "";
         var message = "";
         //If sheet not created yet and today > sunday of the sheet
@@ -121,7 +132,7 @@ function getLineUp() {
     if (!dateOnSheetFound) {
         return "Sheet not created yet!";
     } else {
-        return "This is the lineup for " + dateInString + ": \n" + message;
+        return "This is the program for " + dateInString + ": \n" + message;
     }
 }
 
@@ -166,11 +177,28 @@ function getTrngProgram() {
     } else if (trngPrg == "") {
         return "The training program is not out yet!";
     } else {
-        return "This is the training program for " + dateInString + ": \n" + trngPrg;
+        return "This is the lineup for " + dateInString + ": \n" + trngPrg;
+    }
+}
+
+//Function to toggle daily updates 
+function toggleDailyUpdates() {
+    if (SHEETARR[user.row][4] == "1") {
+        SHEET.getRange('E' + (user.row + 2)).setValue("0");
+        return "you have succesfully turned daily updates off."
+    } else {
+        SHEET.getRange('E' + (user.row + 2)).setValue("1");
+        return "you have succesfully turned daily updates on."
     }
 }
 
 //Helper Functions
+function getSheet() {
+    var logbook = SpreadsheetApp.openById(ssId);
+    var lastSheet = logbook.getNumSheets() - 3; //two more hidden sheet at the end
+    SHEET = logbook.getSheets()[lastSheet];
+    SHEETARR = SHEET.getRange("A2:E70").getValues();
+}
 
 function sendMessageById(ID, content) {
     var method = 'sendMessage';
@@ -189,11 +217,7 @@ function sendMessageById(ID, content) {
 
 function getIDsToUpdate() {
     var idsToUpdate = {};
-    var logbook = SpreadsheetApp.openById(ssId);
-    var lastSheet = logbook.getNumSheets() - 3; //two more hidden sheet at the end
-    var nicknameSheet = logbook.getSheets()[lastSheet];
-    var arr = nicknameSheet.getRange("A2:E70").getValues();
-    for (var i = 0; i < arr.length; i++) {
+    for (var i = 0; i < SHEETARR.length; i++) {
         if (arr[i][4] == "1") {
             idsToUpdate[arr[i][0]] = arr[i][3];
         }
@@ -202,15 +226,11 @@ function getIDsToUpdate() {
 }
 
 function getUser() {
-    var logbook = SpreadsheetApp.openById(ssId);
-    var lastSheet = logbook.getNumSheets() - 3; //two more hidden sheet at the end
-    var nicknameSheet = logbook.getSheets()[lastSheet];
-    var arr = nicknameSheet.getRange("A2:E70").getValues();
-    for (var i = 0; i < arr.length; i++) {
-        if (arr[i][3] == user.id) {
-            user.name = arr[i][0].trim();
-            user.dailyUpdate = arr[i][4];
-            user.row = i + 2;
+    for (var i = 0; i < SHEETARR.length; i++) {
+        if (SHEETARR[i][3] == user.id) {
+            user.name = SHEETARR[i][0].trim();
+            user.dailyUpdate = SHEETARR[i][4];
+            user.row = i;
             return true;
         }
     }
@@ -218,13 +238,12 @@ function getUser() {
 }
 
 function setUser() {
-    var logbook = SpreadsheetApp.openById(ssId);
-    var lastSheet = logbook.getNumSheets() - 3; //two more hidden sheet at the end
-    var nicknameSheet = logbook.getSheets()[lastSheet];
-    var arr = nicknameSheet.getRange("A2:E70").getValues();
-    for (var i = 0; i <arr.length; i++) {
-        if (arr[i][0] == user.name) {
-            nicknameSheet.getRange('D' + (i)).setValue(user.id);
+    if (row == null) {
+        return;
+    }
+    for (var i = 0; i < SHEETARR.length; i++) {
+        if (SHEETARR[i][0] == user.name) {
+            SHEET.getRange('D' + (i + 2)).setValue(user.id);
             return true;
         }
     }
@@ -239,7 +258,7 @@ function sameDay(first, second) {
 }
 
 function convertLineupArrayToString(dateInString, arr, row, col) {
-    var message = "this is the line up for " + dateInString + ":\n";
+    var message = "";
     for (; row < arr.length; row++) {
         if (!(arr[row][col] == "")) {
             message = message + arr[row][col] + ": " + arr[row][col + 2] + "\n";
