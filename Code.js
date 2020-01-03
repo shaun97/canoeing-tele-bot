@@ -1,8 +1,9 @@
 var SHEET = null;
 var SHEETARR = null;
+//Webhook to activate the bot
 
 user = {
-    "id": "68627595",
+    "id": "",
     "name": "Stranger",
     "dailyUpdate": false,
     "row": null
@@ -25,7 +26,7 @@ function doPost(e) {
         getUser();
         // Building commands
         var bus = new CommandBus();
-
+      
         bus.on(/\/updates/, function () {
             var message = toggleDailyUpdates();
             if (user.name == "Stranger") {
@@ -90,6 +91,7 @@ function sendToAll() {
         sendMessageById(IDs[i], message);
     }
 }
+
 
 //Returns a string for the lineup for the day
 function getLineUp() {
