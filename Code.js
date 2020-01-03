@@ -2,7 +2,7 @@ var SHEET = null;
 var SHEETARR = null;
 
 user = {
-    "id": "",
+    "id": "68627595",
     "name": "Stranger",
     "dailyUpdate": false,
     "row": null
@@ -28,7 +28,11 @@ function doPost(e) {
 
         bus.on(/\/updates/, function () {
             var message = toggleDailyUpdates();
-            this.replyToSender("Hello " + user.name + ", " + message);
+            if (user.name == "Stranger") {
+                this.replyToSender("Hello Stranger, please register first to use the updates feature!");
+            } else {
+                this.replyToSender("Hello " + user.name + ", " + message);
+            }
         });
 
         bus.on(/\/program/, function () {
@@ -78,21 +82,13 @@ function doPost(e) {
 //Function to send all 
 function sendToAll() {
     var IDs = getIDsToUpdate();
-    var trngPrg = getTrngProgram();
-    var lineup = getLineUp();
+    var trngPrg = capitaliseFirstLetter(getTrngProgram());
+    var lineup = capitaliseFirstLetter(getLineUp());
     for (var i in IDs) {
         user.name = i;
         var message = "Hey " + user.name + ", rise and shine and get ready to obtain this grain!! \n\n" + trngPrg + "\n\n" + lineup;
         sendMessageById(IDs[i], message);
     }
-}
-
-//Webhook to activate the bot
-function setWebhook() {
-    var bot = new Bot(token, {});
-    var result = bot.request('setWebhook', {
-        url: ScriptApp.getService().getUrl()
-    });
 }
 
 //Returns a string for the lineup for the day
@@ -130,9 +126,9 @@ function getLineUp() {
         sheetNumber++;
     }
     if (!dateOnSheetFound) {
-        return "Sheet not created yet!";
+        return "the sheet not been created yet!";
     } else {
-        return "This is the program for " + dateInString + ": \n" + message;
+        return "this is the lineup for " + dateInString + ": \n" + message;
     }
 }
 
@@ -173,11 +169,11 @@ function getTrngProgram() {
     }
 
     if (!dateOnSheetFound) {
-        return "Sheet not created yet!";
+        return "the sheet not been created yet";
     } else if (trngPrg == "") {
-        return "The training program is not out yet!";
+        return "the training program is not out yet!";
     } else {
-        return "This is the lineup for " + dateInString + ": \n" + trngPrg;
+        return "this is the program for " + dateInString + ": \n" + trngPrg;
     }
 }
 
@@ -193,6 +189,12 @@ function toggleDailyUpdates() {
 }
 
 //Helper Functions
+
+function capitaliseFirstLetter(string) {
+    const lower = string;
+    const upper = lower.charAt(0).toUpperCase() + lower.substring(1);
+    return upper;
+}
 function getSheet() {
     var logbook = SpreadsheetApp.openById(ssId);
     var lastSheet = logbook.getNumSheets() - 3; //two more hidden sheet at the end
@@ -218,8 +220,8 @@ function sendMessageById(ID, content) {
 function getIDsToUpdate() {
     var idsToUpdate = {};
     for (var i = 0; i < SHEETARR.length; i++) {
-        if (arr[i][4] == "1") {
-            idsToUpdate[arr[i][0]] = arr[i][3];
+        if (SHEETARR[i][4] == "1") {
+            idsToUpdate[SHEETARR[i][0]] = SHEETARR[i][3];
         }
     }
     return idsToUpdate;
@@ -261,7 +263,9 @@ function convertLineupArrayToString(dateInString, arr, row, col) {
     var message = "";
     for (; row < arr.length; row++) {
         if (!(arr[row][col] == "")) {
-            message = message + arr[row][col] + ": " + arr[row][col + 2] + "\n";
+            var paddler = arr[row][col];
+            var boat = arr[row][col + 2];
+            message = message + paddler + ": " + boat + "\n";
         }
     }
     return message;
@@ -270,71 +274,3 @@ function convertLineupArrayToString(dateInString, arr, row, col) {
 function getDateStringddMMyy(date) {
     return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
 }
-
-//Bot Functions
-function Bot(token, update) {
-    this.token = token;
-    this.update = update;
-    this.handlers = [];
-}
-
-Bot.prototype.register = function (handler) {
-    this.handlers.push(handler);
-}
-
-Bot.prototype.process = function () {
-    for (var i in this.handlers) {
-        var event = this.handlers[i];
-        var result = event.condition(this);
-        if (result) {
-            return event.handle(this);
-        }
-    }
-}
-
-Bot.prototype.request = function (method, data) {
-    var options = {
-        'method': 'post',
-        'contentType': 'application/json',
-        'payload': JSON.stringify(data)
-    };
-
-    var response = UrlFetchApp.fetch('https://api.telegram.org/bot' + this.token + '/' + method, options);
-
-    if (response.getResponseCode() == 200) {
-        return JSON.parse(response.getContentText());
-    }
-
-    return false;
-}
-
-Bot.prototype.replyToSender = function (text) {
-    return this.request('sendMessage', {
-        'chat_id': this.update.message.chat.id,
-        'text': text
-    });
-}
-
-function CommandBus() {
-    this.commands = [];
-}
-
-CommandBus.prototype.on = function (regexp, callback) {
-    this.commands.push({ 'regexp': regexp, 'callback': callback });
-}
-
-CommandBus.prototype.condition = function (bot) {
-    return bot.update.message.text.charAt(0) === '/';
-}
-
-CommandBus.prototype.handle = function (bot) {
-    for (var i in this.commands) {
-        var cmd = this.commands[i];
-        var tokens = cmd.regexp.exec(bot.update.message.text);
-        if (tokens != null) {
-            return cmd.callback.apply(bot, tokens.splice(1));
-        }
-    }
-    return bot.replyToSender("Sorry, I am not sure what you mean");
-}
-
