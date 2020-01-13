@@ -82,6 +82,7 @@ function doPost(e) {
 
 //Function to send all 
 function sendToAll() {
+    getSheet();
     var IDs = getIDsToUpdate();
     var trngPrg = capitaliseFirstLetter(getTrngProgram());
     var lineup = capitaliseFirstLetter(getLineUp());
@@ -242,9 +243,6 @@ function getUser() {
 }
 
 function setUser() {
-    if (row == null) {
-        return;
-    }
     for (var i = 0; i < SHEETARR.length; i++) {
         if (SHEETARR[i][0] == user.name) {
             SHEET.getRange('D' + (i + 2)).setValue(user.id);
@@ -267,7 +265,11 @@ function convertLineupArrayToString(dateInString, arr, row, col) {
         if (!(arr[row][col] == "")) {
             var paddler = arr[row][col];
             var boat = arr[row][col + 2];
-            message = message + paddler + ": " + boat + "\n";
+          var remarks = arr[row][col + 1];
+          if (remarks != "") {
+            remarks = "(" + remarks + ")";
+          }
+            message = message + paddler + ": " + boat + remarks + "\n";
         }
     }
     return message;
