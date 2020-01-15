@@ -26,7 +26,7 @@ function doPost(e) {
         getUser();
         // Building commands
         var bus = new CommandBus();
-      
+
         bus.on(/\/updates/, function () {
             var message = toggleDailyUpdates();
             if (user.name == "Stranger") {
@@ -47,8 +47,8 @@ function doPost(e) {
         });
 
         bus.on(/\/start/, function () {
-            this.replyToSender("Hello fellow canoeist, this smart boi will help you get updates on the /program and /lineup. " +
-                "Begin by registering your name using /register [nickname on the sheets] and use /updates to toggle daily updates!");
+            this.replyToSender("Hello fellow canoeist, daddy syaz will help you get updates on the /program and /lineup. " +
+                "Begin by registering your name using /register [nickname on the sheets] (eg. /register syaz) and use /updates to toggle daily updates!");
         });
 
         bus.on(/\/register/, function () {
@@ -63,11 +63,11 @@ function doPost(e) {
         });
 
         bus.on(/\/help/, function () {
-            this.replyToSender("Here is a summary of what this smart boi can do: \n \n" +
+            this.replyToSender("Here is a summary of what daddy syaz can do: \n \n" +
                 "/program - the program for today (shows tomorrow's program after 1500) \n" +
                 "/lineup - the lineup for today (shows tomorrow's lineup after dana assigns usually around 2200) \n" +
                 "/updates - to toggle between enabling/disabling daily 0600 updates \n" +
-                "/register [nickname on sheet] - to register your name with me!"
+                "/register [nickname on sheet] (eg. /register syaz) - to register your name with me!"
             );
         });
     }
@@ -88,7 +88,7 @@ function sendToAll() {
     var lineup = capitaliseFirstLetter(getLineUp());
     for (var i in IDs) {
         user.name = i;
-        var message = "Hey " + user.name + ", rise and shine and get ready to obtain this grain!! \n\n" + trngPrg + "\n\n" + lineup;
+        var message = "Hello " + user.name + ", rise and shine you mad people. \n\n" + trngPrg + "\n\n" + lineup;
         sendMessageById(IDs[i], message);
     }
 }
@@ -122,7 +122,7 @@ function getLineUp() {
             if (sameDay(today, dateOnSheet)) {
                 dateOnSheetFound = true;
                 dateInString = getDateStringddMMyy(lineupAndDateCells[dateRow][col]);
-                message = convertLineupArrayToString(dateInString, lineupAndDateCells, lineupRow, col);
+                message = convertLineupArrayToString(lineupAndDateCells, lineupRow, col);
                 break;
             }
         }
@@ -259,16 +259,16 @@ function sameDay(first, second) {
         first.getDate() == second.getDate());
 }
 
-function convertLineupArrayToString(dateInString, arr, row, col) {
+function convertLineupArrayToString(arr, row, col) {
     var message = "";
     for (; row < arr.length; row++) {
         if (!(arr[row][col] == "")) {
             var paddler = arr[row][col];
             var boat = arr[row][col + 2];
-          var remarks = arr[row][col + 1];
-          if (remarks != "") {
-            remarks = "(" + remarks + ")";
-          }
+            var remarks = arr[row][col + 1];
+            if (remarks != "") {
+                remarks = "(" + remarks + ")";
+            }
             message = message + paddler + ": " + boat + remarks + "\n";
         }
     }
