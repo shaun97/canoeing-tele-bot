@@ -65,7 +65,7 @@ function doPost(e) {
         bus.on(/\/help/, function () {
             this.replyToSender("Here is a summary of what daddy syaz can do: \n \n" +
                 "/program - the program for today (shows tomorrow's program after 1500) \n" +
-                "/lineup - the lineup for today (shows tomorrow's lineup after dana assigns usually around 2200) \n" +
+                "/lineup - the lineup for today (shows tomorrow's lineup after dana assigns usually around 2000) \n" +
                 "/updates - to toggle between enabling/disabling daily 0600 updates \n" +
                 "/register [nickname on sheet] (eg. /register syaz) - to register your name with me!"
             );
@@ -96,7 +96,7 @@ function sendToAll() {
 
 //Returns a string for the lineup for the day
 function getLineUp() {
-    var sheetNumber = 4;
+    var sheetNumber = 6;
     var dateOnSheetFound = false;
     //Access the sheet number 4 first if date found, breaks
     while (!dateOnSheetFound) {
@@ -106,7 +106,7 @@ function getLineUp() {
         //Check the date and saves the corresponding trng program
         var today = new Date();
         //If past 10 oclock, sets today as the next day for program
-        if (today.getHours() > 2200) {
+        if (today.getHours() > 20) {
             today.setDate(today.getDate() + 1);
         }
         var dateRow = 0;
@@ -114,11 +114,11 @@ function getLineUp() {
         var dateInString = "";
         var message = "";
         //If sheet not created yet and today > sunday of the sheet
-        if (today > new Date(lineupAndDateCells[dateRow][18]) && sheetNumber == 4) {
+        if (today > lineupAndDateCells[dateRow][18]) {
             break;
         }
         for (var col = 0; col <= 18; col += 3) {
-            var dateOnSheet = new Date(lineupAndDateCells[dateRow][col]);
+          var dateOnSheet = lineupAndDateCells[dateRow][col];
             if (sameDay(today, dateOnSheet)) {
                 dateOnSheetFound = true;
                 dateInString = getDateStringddMMyy(lineupAndDateCells[dateRow][col]);
@@ -137,30 +137,33 @@ function getLineUp() {
 
 //Returns the training program
 function getTrngProgram() {
-    var sheetNumber = 4;
+    var sheetNumber = 6;
     var dateOnSheetFound = false;
+  var logbook = SpreadsheetApp.openById(ssId);
     //Access the sheet number 4 first if date found, breaks
     while (!dateOnSheetFound) {
-        var sheet = SpreadsheetApp.openById(ssId).getSheets()[sheetNumber];
-        var prgAndDateCells = sheet.getRange("A12:U14").getValues();
+        var sheet = logbook.getSheets()[sheetNumber];
+     var prgAndDateCells = sheet.getRange("A12:U14").getValues();
 
         //Check the date and saves the corresponding trng program
         var today = new Date();
-        //If past 2oclock, sets today as the next day for program
+        //If past 2 oclock, sets today as the next day for program
         if (today.getHours() > 14) {
             today.setDate(today.getDate() + 1);
         }
         var dateRow = 2;
         var prgRow = 0;
-        var trngPrg = "";
         var dateInString = "";
-        // If sheet not created yet and today > sunday of the sheet
-        if (today > new Date(prgAndDateCells[dateRow][18]) && sheetNumber == 4) {
+        var message = "";
+        //If sheet not created yet and today > sunday of the sheet
+        if (today > prgAndDateCells[dateRow][18]) {
+              Logger.log(prgAndDateCells[dateRow][18]);
             break;
         }
 
         for (var col = 0; col <= 18; col += 3) {
-            var dateOnSheet = new Date(prgAndDateCells[dateRow][col]);
+            var dateOnSheet = prgAndDateCells[dateRow][col];
+          Logger.log(dateOnSheet);
             if (sameDay(today, dateOnSheet)) {
                 dateOnSheetFound = true;
                 dateInString = getDateStringddMMyy(prgAndDateCells[dateRow][col]);
@@ -266,12 +269,14 @@ function convertLineupArrayToString(arr, row, col) {
             var paddler = arr[row][col];
             var boat = arr[row][col + 2];
             var remarks = arr[row][col + 1];
+ 
             if (remarks != "") {
-                remarks = "(" + remarks + ")";
+                remarks = " (" + remarks + ")";
             }
             message = message + paddler + ": " + boat + remarks + "\n";
         }
     }
+      Logger.log(message);
     return message;
 }
 
